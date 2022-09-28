@@ -60,7 +60,7 @@ class IngredientController extends AbstractController
                 'Votre ingrédient a été crée avec success!'
             );
             
-            return $this->redirectToRoute('app_ingredient',[
+            return $this->redirectToRoute('ingredient_index',[
                 
             ]);
 
