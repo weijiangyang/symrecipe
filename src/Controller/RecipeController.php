@@ -9,8 +9,10 @@ use App\Repository\IncredientRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\HttpFoundation\Request;
+
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class RecipeController extends AbstractController
@@ -27,7 +29,7 @@ class RecipeController extends AbstractController
     public function index(Request $request, RecipeRepository $recipeRepository, PaginatorInterface $paginator): Response
     {
         $recipes = $paginator->paginate(
-            $recipeRepository->findAll(), /* query NOT result */
+            $recipeRepository->findBy(['user'=>$this->getUser()]), /* query NOT result */
             $request->query->getInt('page', 1), /*page number*/
             10 /*limit per page*/
         );
@@ -52,6 +54,7 @@ class RecipeController extends AbstractController
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $recipe = $form->getData();
+            $recipe->setUser($this->getUser());
             $em->persist($recipe);
             $em->flush();
             $this->addFlash(
@@ -76,6 +79,7 @@ class RecipeController extends AbstractController
     
      * @return void
      */
+    #[Security("is_granted('ROLE_USER') and user === recipe.getUser()")]
     #[Route('/recipe/edition/{id}', name: 'recipe_edit', methods: ['GET', 'POST'])]
 
     public function edit(Recipe $recipe, Request $request, EntityManagerInterface $em): Response
