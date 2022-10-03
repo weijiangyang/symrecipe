@@ -2,18 +2,25 @@
 
 namespace App\Entity;
 
-use App\Repository\RecipeRepository;
 use DateTime;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use App\Entity\Mark;
+use Vich\Uploadable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use App\Repository\RecipeRepository;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
+
+use Symfony\Component\HttpFoundation\File\File;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
+
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[UniqueEntity('name')]
 #[ORM\Entity(repositoryClass: RecipeRepository::class)]
 #[ORM\HasLifecycleCallbacks]
+#[Vich\Uploadable]
 class Recipe
 {
     #[ORM\Id]
@@ -54,6 +61,9 @@ class Recipe
     private ?bool $isFavorite = null;
 
     #[ORM\Column]
+    private ?bool $isPublic = false;
+
+    #[ORM\Column]
     #[Assert\NotBlank()]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -68,11 +78,23 @@ class Recipe
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
 
+    #[ORM\OneToMany(mappedBy: 'recipe', targetEntity: Mark::class, orphanRemoval: true)]
+    private Collection $marks;
+
+    private ?float $average;
+
+     #[Vich\UploadableField(mapping: 'recipe', fileNameProperty: 'imageName')]
+     private ?File $imageFile = null;
+
+    #[ORM\Column(type: 'string',nullable:true)]
+     private ?string $imageName = null;
+
     public function __construct()
     {
         $this->ingredients = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
+        $this->marks = new ArrayCollection();
     }
 
     #[ORM\PrePersist()]
@@ -169,6 +191,18 @@ class Recipe
         return $this;
     }
 
+    public function isIsPublic(): ?bool
+    {
+        return $this->isPublic;
+    }
+
+    public function setIsPublic(bool $isPublic): self
+    {
+        $this->isPublic = $isPublic;
+
+        return $this;
+    }
+
     public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
@@ -229,5 +263,78 @@ class Recipe
         return $this;
     }
 
-    
+    /**
+     * @return Collection<int, Mark>
+     */
+    public function getMarks(): Collection
+    {
+        return $this->marks;
+    }
+
+    public function addMark(Mark $mark): self
+    {
+        if (!$this->marks->contains($mark)) {
+            $this->marks->add($mark);
+            $mark->setRecipe($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMark(Mark $mark): self
+    {
+        if ($this->marks->removeElement($mark)) {
+            // set the owning side to null (unless already changed)
+            if ($mark->getRecipe() === $this) {
+                $mark->setRecipe(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getAverage(){
+        /**
+         * @var Mark[]
+         */
+        $marks = $this->marks;
+        $sum = 0;
+        if(count($marks)!==0){
+            foreach($marks as $mark){
+            $sum += $mark->getMark();
+        }
+        $average = $sum/count($marks);
+        return $average;
+        }
+        return 0;
+        
+    }
+
+    public function setImageFile(?File $imageFile = null): void
+    {
+        $this->imageFile = $imageFile;
+
+        if (null !== $imageFile) {
+            // It is required that at least one field changes if you are using doctrine
+            // otherwise the event listeners won't be called and the file is lost
+              $this->updatedAt = new \DateTimeImmutable();
+        }
+    }
+
+
+    public function getImageFile(): ?File
+    {
+        return $this->imageFile;
+    }
+
+    public function setImageName(?string $imageName): void
+    {
+        $this->imageName = $imageName;
+    }
+
+    public function getImageName(): ?string
+    {
+        return $this->imageName;
+    }
+
 }

@@ -1,15 +1,11 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Symrecipe-Accueil{% endblock %}
-
+{% block title %}Symrecipe-mes recettes{% endblock %}
 
 {% block body %}
-    <div class="container">
-        <div class="jumbotron mt-4">
-            <h1 class="display-4">Bienvenue sur Symrecipe</h1>
-            <p class="lead">Symrecipe est une application pour te permettre de créer des recettes à base d'ingrédients que tu
-                toi-mème peux créer.Tu pourras partager tes recettes à la communité du site, ou bien en garder en privées.</p>
-            <hr class="my-4">
+    <div class="container mt-4">
+        
+        {% if not recipes is same as ([]) %}
             <h1>Les recettes de la communauté</h1>
             <div class="d-flex justify-content-start flex-wrap">
                 {% for recipe in recipes %}
@@ -22,13 +18,9 @@
                         </div>
                 {% endfor %}
             </div>
-            <p>Pour commencer , rendez-vous sur la page d'inscription pour utiliser l'application.</p>
-            <p class="lead">
-                <a class="btn btn-primary btn-lg" href="#" role="button">Inscription</a>
-            </p>
-        </div>
-
+        {% else %}
+            <h2> Il n'y a pas de recette </h2>
+        {% endif %}
     </div>
-   
-   
+    
 {% endblock %}
